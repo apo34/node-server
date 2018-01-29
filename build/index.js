@@ -7,6 +7,7 @@ var Main = /** @class */ (function () {
     function Main() {
         var _this = this;
         this._maintenanceInProgress = false;
+        this._port = process.env.PORT || 3000;
         this._app = express();
         hbs.registerPartials(__dirname + '/../views/partials');
         this._app.set('view engine', 'hbs');
@@ -55,8 +56,8 @@ var Main = /** @class */ (function () {
                 }
             });
         });
-        this._app.listen(3000, function () {
-            console.log('Server is running!');
+        this._app.listen(this._port, function () {
+            console.log("Server is running on port " + _this._port + " ");
         });
     }
     return Main;

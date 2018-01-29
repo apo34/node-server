@@ -8,6 +8,7 @@ export class Main {
 
   private _app: Express;
   private _maintenanceInProgress = false;
+  private _port = process.env.PORT || 3000;
 
   constructor() {
     this._app = express();
@@ -64,8 +65,8 @@ export class Main {
       })
     });
 
-    this._app.listen(3000, () => {
-      console.log('Server is running!')
+    this._app.listen(this._port, () => {
+      console.log(`Server is running on port ${this._port} `);
     });
   }
 
