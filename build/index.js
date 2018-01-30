@@ -45,6 +45,11 @@ var Main = /** @class */ (function () {
                 pageTitle: 'About Page',
             });
         });
+        this._app.get('/projects', function (req, res) {
+            res.render('projects.hbs', {
+                pageTitle: 'Projects Page',
+            });
+        });
         this._app.get('/bad', function (req, res) {
             res.send({
                 status: false,

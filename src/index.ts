@@ -53,6 +53,12 @@ export class Main {
       })
     });
 
+    this._app.get('/projects', (req, res) => {
+      res.render('projects.hbs', {
+        pageTitle: 'Projects Page',
+      })
+    });
+
     this._app.get('/bad', (req, res) => {
       res.send({
         status: false,
