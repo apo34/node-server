@@ -1,71 +1,63 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var bodyParser = require("body-parser");
 var express = require("express");
-var hbs = require("hbs");
-var fs = require("fs");
-var Main = /** @class */ (function () {
-    function Main() {
-        var _this = this;
-        this._maintenanceInProgress = false;
-        this._port = process.env.PORT || 3000;
-        this._app = express();
-        hbs.registerPartials(__dirname + '/../views/partials');
-        this._app.set('view engine', 'hbs');
-        this._app.use(express.static(__dirname + '/../public'));
-        hbs.registerHelper('getCurrentYear', function () { return new Date().getFullYear(); });
-        hbs.registerHelper('getPageName', function () { return 'Awesome Website'; });
-        hbs.registerHelper('capitalize', function (text) { return text.toUpperCase(); });
-        this._app.use(function (req, res, next) {
-            var now = new Date().toString();
-            var log = now + ": " + req.method + " " + req.path;
-            fs.appendFile('server.log', log + '\n', function (error) {
-                if (error) {
-                    console.log('Unable to write log');
-                }
-            });
-            next();
-        });
-        this._app.use(function (req, res, next) {
-            if (_this._maintenanceInProgress) {
-                res.render('maintenance.hbs');
+var mongodb_1 = require("mongodb");
+var db_1 = require("./db/db");
+var models_1 = require("./models");
+exports.app = express();
+var port = process.env.PORT || 3000;
+exports.app.use(bodyParser.json());
+exports.app.listen(port, function () {
+    console.log("Started on port " + port);
+    db_1.Db.connect()
+        .then(function () {
+        console.log("Connected to db");
+        console.log("");
+        exports.app.emit('appStarted');
+    });
+});
+exports.app.route('/todos')
+    .get(function (req, res) {
+    models_1.Todo.find()
+        .then(function (todos) {
+        res.send({ todos: todos });
+    })
+        .catch(function (err) {
+        res.status(400).send(err);
+    });
+})
+    .post(function (req, res) {
+    var todo = new models_1.Todo({
+        text: req.body.text
+    });
+    todo.save()
+        .then(function (doc) {
+        res.send(doc);
+    })
+        .catch(function (err) {
+        res.status(400).send(err);
+    });
+});
+exports.app.route('/todos/:id')
+    .get(function (req, res) {
+    var givenId = req.params.id;
+    if (!mongodb_1.ObjectId.isValid(givenId)) {
+        res.status(422).send();
+    }
+    else {
+        models_1.Todo.findById(req.params.id)
+            .then(function (todo) {
+            if (!todo) {
+                res.status(404).send();
             }
             else {
-                next();
+                res.send({ todo: todo });
             }
-        });
-        // console.log(this._app);  
-        this._app.get('/', function (req, res) {
-            res.render('home.hbs', {
-                pageTitle: 'Home Page',
-                message: 'Welcome home!'
-            });
-        });
-        this._app.get('/about', function (req, res) {
-            res.render('about.hbs', {
-                pageTitle: 'About Page',
-            });
-        });
-        this._app.get('/projects', function (req, res) {
-            res.render('projects.hbs', {
-                pageTitle: 'Projects Page',
-            });
-        });
-        this._app.get('/bad', function (req, res) {
-            res.send({
-                status: false,
-                error: {
-                    message: {
-                        code: '1.2.3',
-                        msg: 'Something went wrong'
-                    }
-                }
-            });
-        });
-        this._app.listen(this._port, function () {
-            console.log("Server is running on port " + _this._port + " ");
+        })
+            .catch(function (err) {
+            res.status(500).send();
         });
     }
-    return Main;
-}());
-exports.Main = Main;
-new Main();
+});
+//# sourceMappingURL=index.js.map

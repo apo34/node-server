@@ -1,83 +1,66 @@
+import * as bodyParser from 'body-parser';
 import * as express from 'express';
-import * as hbs from 'hbs';
-import * as fs from 'fs';
+import { ObjectId } from 'mongodb';
 
-import { Application, Response, Request, Express } from 'express'
+import { Db } from './db/db';
+import { Todo, User } from './models';
 
-export class Main {
+export const app = express();
 
-  private _app: Express;
-  private _maintenanceInProgress = false;
-  private _port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
-  constructor() {
-    this._app = express();
-    hbs.registerPartials(__dirname + '/../views/partials')
-    this._app.set('view engine', 'hbs');
-    this._app.use(express.static(__dirname + '/../public'))
+app.use(bodyParser.json());
 
-    hbs.registerHelper('getCurrentYear', () => new Date().getFullYear());
-    hbs.registerHelper('getPageName', () => 'Awesome Website');
-    hbs.registerHelper('capitalize', (text: string) => text.toUpperCase());
+app.listen(port, () => {
+  console.log(`Started on port ${port}`);
+  Db.connect()
+    .then(() => {
+      console.log(`Connected to db`);
+      console.log(``);
+      app.emit('appStarted');
+    });
+});
 
-    this._app.use((req, res, next) => {
-      const now = new Date().toString();
-      const log = `${now}: ${req.method} ${req.path}`
-      fs.appendFile('server.log', log + '\n', error => {
-        if (error) {
-          console.log('Unable to write log');
-        }
+app.route('/todos')
+  .get((req, res) => {
+    Todo.find()
+      .then((todos) => {
+        res.send({ todos });
+      })
+      .catch((err) => {
+        res.status(400).send(err);
       });
-      next();
+  })
+  .post((req, res) => {
+    const todo = new Todo({
+      text: req.body.text
     });
 
-    this._app.use((req, res, next) => {
-      if (this._maintenanceInProgress) {
-        res.render('maintenance.hbs');
-      } else {
-        next();
-      }
-    })
-
-    // console.log(this._app);  
-    this._app.get('/', (req: Request, res: Response) => {
-      res.render('home.hbs', {
-        pageTitle: 'Home Page',
-        message: 'Welcome home!'
+    todo.save()
+      .then((doc) => {
+        res.send(doc);
       })
-    });
+      .catch((err) => {
+        res.status(400).send(err);
+      });
+  });
 
-    this._app.get('/about', (req, res) => {
-      res.render('about.hbs', {
-        pageTitle: 'About Page',
-      })
-    });
-
-    this._app.get('/projects', (req, res) => {
-      res.render('projects.hbs', {
-        pageTitle: 'Projects Page',
-      })
-    });
-
-    this._app.get('/bad', (req, res) => {
-      res.send({
-        status: false,
-        error: {
-          message: {
-            code: '1.2.3',
-            msg: 'Something went wrong'
-          }
+app.route('/todos/:id')
+  .get((req, res) => {
+    const givenId = req.params.id;
+    if (!ObjectId.isValid(givenId)) {
+      res.status(422).send();
+    } else {
+      Todo.findById(req.params.id)
+      .then((todo) => {
+        if (!todo) {
+          res.status(404).send();
+        } else {
+          res.send({ todo });
         }
       })
-    });
-
-    this._app.listen(this._port, () => {
-      console.log(`Server is running on port ${this._port} `);
-    });
-  }
-
-  
-
-}
-
-new Main();
+      .catch((err) => {
+        res.status(500).send();
+      });
+    }
+  });
