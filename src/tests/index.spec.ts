@@ -100,14 +100,99 @@ describe('GET /todos/:id', () => {
   it('should return 404 on valid Id and no data', (done) => {
     const randomObjectId = new ObjectID().toHexString();
     request(app)
-    .get(`/todos/${randomObjectId}`)
-    .expect(404)
-    .end(done);
+      .get(`/todos/${randomObjectId}`)
+      .expect(404)
+      .end(done);
   });
 
   it('should return 422 on invalid Id', (done) => {
     request(app)
       .get(`/todos/invalidId`)
+      .expect(422)
+      .end(done);
+  });
+});
+
+describe('DELETE /todos/:id', () => {
+  it('should remove todo', (done) => {
+    const deletedId = testTodos[0]._id.toHexString();
+    request(app)
+      .delete(`/todos/${deletedId}`)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.todo._id).toBe(deletedId);
+      })
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+
+        Todo.findById(deletedId)
+          .then((res) => {
+            expect(res).toBeNull();
+            done();
+          }).catch((err) => done(err));
+      });
+  });
+
+  it('should return 404 on valid Id and no data', (done) => {
+    const randomObjectId = new ObjectID().toHexString();
+    request(app)
+      .delete(`/todos/${randomObjectId}`)
+      .expect(404)
+      .end(done);
+  });
+
+  it('should return 422 on invalid Id', (done) => {
+    request(app)
+      .delete(`/todos/invalidId`)
+      .expect(422)
+      .end(done);
+  });
+});
+
+describe('PATCH /todos/:id', () => {
+  it('should return updated todo doc', (done) => {
+    const text = 'Modified text';
+
+    request(app)
+      .patch(`/todos/${testTodos[0]._id.toHexString()}`)
+      .send({ text, completed: true })
+      .expect(200)
+      .expect((res) => {
+        const todo = res.body.todo;
+        expect(todo.text).toBe(text);
+        expect(todo.completed).toBe(true);
+        expect(todo.completedAt).not.toBeNull();
+      })
+      .end(done);
+  });
+
+  it('should clear completedAt updated todo doc', (done) => {
+
+    request(app)
+      .patch(`/todos/${testTodos[0]._id.toHexString()}`)
+      .send({ completed: false })
+      .expect(200)
+      .expect((res) => {
+        const todo = res.body.todo;
+        expect(todo.completed).toBe(false);
+        expect(todo.completedAt).toBeNull();
+      })
+      .end(done);
+  });
+
+  it('should return 404 on valid Id and no data', (done) => {
+    const randomObjectId = new ObjectID().toHexString();
+    request(app)
+      .patch(`/todos/${randomObjectId}`)
+      .expect(404)
+      .end(done);
+  });
+
+  it('should return 422 on invalid Id', (done) => {
+    request(app)
+      .patch(`/todos/invalidId`)
       .expect(422)
       .end(done);
   });

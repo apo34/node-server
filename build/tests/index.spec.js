@@ -102,4 +102,79 @@ describe('GET /todos/:id', function () {
             .end(done);
     });
 });
+describe('DELETE /todos/:id', function () {
+    it('should remove todo', function (done) {
+        var deletedId = testTodos[0]._id.toHexString();
+        request(index_1.app)
+            .delete("/todos/" + deletedId)
+            .expect(200)
+            .expect(function (res) {
+            expect(res.body.todo._id).toBe(deletedId);
+        })
+            .end(function (err, res) {
+            if (err) {
+                return done(err);
+            }
+            models_1.Todo.findById(deletedId)
+                .then(function (res) {
+                expect(res).toBeNull();
+                done();
+            }).catch(function (err) { return done(err); });
+        });
+    });
+    it('should return 404 on valid Id and no data', function (done) {
+        var randomObjectId = new mongodb_1.ObjectID().toHexString();
+        request(index_1.app)
+            .delete("/todos/" + randomObjectId)
+            .expect(404)
+            .end(done);
+    });
+    it('should return 422 on invalid Id', function (done) {
+        request(index_1.app)
+            .delete("/todos/invalidId")
+            .expect(422)
+            .end(done);
+    });
+});
+describe('PATCH /todos/:id', function () {
+    it('should return updated todo doc', function (done) {
+        var text = 'Modified text';
+        request(index_1.app)
+            .patch("/todos/" + testTodos[0]._id.toHexString())
+            .send({ text: text, completed: true })
+            .expect(200)
+            .expect(function (res) {
+            var todo = res.body.todo;
+            expect(todo.text).toBe(text);
+            expect(todo.completed).toBe(true);
+            expect(todo.completedAt).not.toBeNull();
+        })
+            .end(done);
+    });
+    it('should clear completedAt updated todo doc', function (done) {
+        request(index_1.app)
+            .patch("/todos/" + testTodos[0]._id.toHexString())
+            .send({ completed: false })
+            .expect(200)
+            .expect(function (res) {
+            var todo = res.body.todo;
+            expect(todo.completed).toBe(false);
+            expect(todo.completedAt).toBeNull();
+        })
+            .end(done);
+    });
+    it('should return 404 on valid Id and no data', function (done) {
+        var randomObjectId = new mongodb_1.ObjectID().toHexString();
+        request(index_1.app)
+            .patch("/todos/" + randomObjectId)
+            .expect(404)
+            .end(done);
+    });
+    it('should return 422 on invalid Id', function (done) {
+        request(index_1.app)
+            .patch("/todos/invalidId")
+            .expect(422)
+            .end(done);
+    });
+});
 //# sourceMappingURL=index.spec.js.map
