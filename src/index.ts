@@ -3,27 +3,29 @@ import * as express from 'express';
 
 import { Db } from './db/db';
 
+import { config } from './config';
 import { TodoRoutes, UsersRoutes } from './routes';
-
-import * as JWT from 'jsonwebtoken'
 
 export const app = express();
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || config.defaultPort;
 
 app.use(bodyParser.json());
 
 const TodoRoutesInstance = new TodoRoutes(app);
-const UserRoutesInsctance = new UsersRoutes(app);
+const UserRoutesInstance = new UsersRoutes(app);
 
 app.listen(port, () => {
   console.log(`Started on port ${port}`);
   Db.connect()
-    .then(() => {
-      console.log(`Connected to db`);
-      console.log(``);
-      app.emit('appStarted');
+    .then((status) => {
+      if (status) {
+        console.log(`Connected to db`);
+        console.log(``);
+        app.emit('appStarted');
+      } else {
+        console.log('App terminating...');
+        process.exit(1);
+      }
     });
 });
-
-JWT.sign('s','s')

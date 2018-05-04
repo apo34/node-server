@@ -1,38 +1,31 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var pick = require("lodash/pick");
-var mongodb_1 = require("mongodb");
+var pick_1 = require("lodash/pick");
+var middleware_1 = require("./../middleware");
 var models_1 = require("./../models");
 var UsersRoutes = /** @class */ (function () {
     function UsersRoutes(app) {
-        console.log('UserRoutes constructor');
         app.route('/users')
             .post(function (req, res) {
-            var body = pick(req.body, ['email', 'password']);
+            var body = pick_1.default(req.body, ['email', 'password']);
             var user = new models_1.User(body);
-            console.log('users post');
             user.save()
-                .then(function (userModel) {
-                console.log(userModel);
-                userModel.generateAuthToken().then(function (a) {
-                    console.log(a);
-                });
-                res.send(user);
+                .then(function () {
+                return user.generateAuthToken();
             })
-                .catch(function () {
-                console.log('err?');
+                .then(function (token) {
+                return res.header('x-auth', token).send(user);
+            })
+                .catch(function (err) {
+                console.log('err?', err);
                 res.status(400).send();
             });
         });
+        app.route('/users/me')
+            .get(middleware_1.authenticate, function (req, res) {
+            res.send(req.user);
+        });
     }
-    UsersRoutes.prototype._validateId = function (request, response) {
-        var givenId = request.params.id;
-        if (!mongodb_1.ObjectId.isValid(givenId)) {
-            response.status(422).send();
-            return false;
-        }
-        return true;
-    };
     return UsersRoutes;
 }());
 exports.UsersRoutes = UsersRoutes;

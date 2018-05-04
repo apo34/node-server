@@ -1,8 +1,14 @@
 import * as mongoose from 'mongoose';
 
 export class Db {
-  public static connect (): Promise<typeof mongoose> {
-    return mongoose.connect(this._determineDbAdress());
+  public static connect (): Promise<boolean> {
+    return mongoose.connect(this._determineDbAdress())
+      .then(() => true)
+      .catch((reason) => {
+        console.log('Could not connect to db!');
+        console.log('Reason:', reason.message);
+        return false;
+      });
   }
 
   private static _determineDbAdress (): string {

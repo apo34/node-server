@@ -5,7 +5,13 @@ var Db = /** @class */ (function () {
     function Db() {
     }
     Db.connect = function () {
-        return mongoose.connect(this._determineDbAdress());
+        return mongoose.connect(this._determineDbAdress())
+            .then(function () { return true; })
+            .catch(function (reason) {
+            console.log('Could not connect to db!');
+            console.log('Reason:', reason.message);
+            return false;
+        });
     };
     Db._determineDbAdress = function () {
         switch (process.env.NODE_ENV) {

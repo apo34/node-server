@@ -1,7 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var bcrypt = require("bcryptjs");
 var JWT = require("jsonwebtoken");
+var pick_1 = require("lodash/pick");
 var mongoose_1 = require("mongoose");
+var config_1 = require("./../config");
 var UserSchema = new mongoose_1.Schema({
     password: {
         type: String,
@@ -35,21 +38,50 @@ var UserSchema = new mongoose_1.Schema({
 }, {
     timestamps: true
 });
+// Event hooks
 UserSchema.pre('save', function (next) {
-    console.log('pre save hook');
-    next();
+    var user = this;
+    if (user.isModified('password')) {
+        bcrypt.hash(user.password, 10)
+            .then(function (hash) {
+            user.password = hash;
+            next();
+        });
+    }
+    else {
+        next();
+    }
 });
+// Stock methods overrides
+UserSchema.methods.toJSON = function () {
+    var userObject = this.toObject();
+    return pick_1.default(userObject, ['_id', 'email']);
+};
+// Custom methods declarations
 UserSchema.methods.generateAuthToken = function () {
     var access = 'auth';
     var token = JWT.sign({
         _id: this._id.toHexString(),
         access: access
-    }, 'abc');
+    }, config_1.config.JWTsecret);
     var tokens = this.tokens || [];
-    tokens.concat([{ access: access, token: token }]);
-    this.tokens = tokens;
+    this.tokens = tokens.concat([{ access: access, token: token }]);
     return this.save().then(function () {
         return token;
+    });
+};
+UserSchema.statics.findByToken = function (token) {
+    var decodedToken;
+    try {
+        decodedToken = JWT.verify(token, config_1.config.JWTsecret);
+    }
+    catch (e) {
+        return mongoose_1.Promise.reject();
+    }
+    return this.findOne({
+        '_id': decodedToken._id,
+        'tokens.token': token,
+        'tokens.access': 'auth'
     });
 };
 exports.User = mongoose_1.model('User', UserSchema);

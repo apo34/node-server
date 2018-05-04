@@ -1,20 +1,34 @@
+import * as bcrypt from 'bcryptjs';
 import * as JWT from 'jsonwebtoken';
-import { ObjectId } from 'mongodb';
-import { Document, Model, model, Schema } from 'mongoose';
+import pick from 'lodash/pick';
+import { Document, Model, model, Promise, Schema } from 'mongoose';
+
+import { config } from './../config';
 
 interface IToken {
   access: string;
   token: string;
 }
 
-interface IUser {
-  password?: string;
-  email?: string;
+interface IJWTData {
+  _id: string;
+  access: string;
+}
+
+export interface IUserDocument extends Document {
+  password: string;
+  email: string;
   tokens?: IToken[];
 }
 
-interface IUserModel extends IUser, Document {
-  generateAuthToken: (this: IUserModel) => Promise<string>;
+interface IUser extends IUserDocument {
+  // Custom methods typings
+  generateAuthToken: (this: IUser) => Promise<string>;
+}
+
+interface IUserModel extends Model<IUser> {
+  // Static method typings
+  findByToken: (this: IUserModel, token: string) => Promise<IUserDocument>;
 }
 
 const UserSchema: Schema = new Schema({
@@ -51,25 +65,59 @@ const UserSchema: Schema = new Schema({
   timestamps: true
 });
 
+// Event hooks
+
 UserSchema.pre('save', function (this: IUser, next) {
-  console.log('pre save hook');
-  next();
+  const user = this;
+  if (user.isModified('password')) {
+    bcrypt.hash(user.password, 10)
+      .then((hash) => {
+        user.password = hash;
+        next();
+      });
+  } else {
+    next();
+  }
 });
 
-UserSchema.methods.generateAuthToken = function (this: IUserModel) {
+// Stock methods overrides
+
+UserSchema.methods.toJSON = function (this: IUser) {
+  const userObject = this.toObject();
+  return pick(userObject, ['_id', 'email']);
+};
+
+// Custom methods declarations
+
+UserSchema.methods.generateAuthToken = function (this: IUser) {
   const access = 'auth';
   const token = JWT.sign({
     _id: this._id.toHexString(),
     access
-  }, 'abc');
+  }, config.JWTsecret);
 
   const tokens = this.tokens || [];
-  tokens.concat([{ access, token }]);
-  this.tokens = tokens;
+  this.tokens = [...tokens, { access, token }];
 
   return this.save().then(() => {
     return token;
   });
+
 };
 
-export const User: Model<IUserModel> = model('User', UserSchema);
+UserSchema.statics.findByToken = function (this: IUserModel, token: string) {
+  let decodedToken: IJWTData;
+  try {
+    decodedToken = JWT.verify(token, config.JWTsecret) as IJWTData;
+  } catch (e) {
+    return Promise.reject();
+  }
+
+  return this.findOne({
+    '_id': decodedToken._id,
+    'tokens.token': token,
+    'tokens.access': 'auth'
+  });
+};
+
+export const User: IUserModel = model<IUser, IUserModel>('User', UserSchema);
