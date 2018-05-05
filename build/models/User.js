@@ -68,7 +68,9 @@ UserSchema.methods.generateAuthToken = function () {
         access: access
     }, config_1.config.JWTsecret);
     var tokens = this.tokens || [];
-    this.tokens = tokens.concat([{ access: access, token: token }]);
+    var index = tokens.findIndex(function (token) { return token.access === access; });
+    this.tokens = index === -1
+        ? tokens.concat([{ access: access, token: token }]) : tokens.splice(index, 1, { access: access, token: token });
     return this.save().then(function () {
         return token;
     });
@@ -86,6 +88,9 @@ UserSchema.statics.findByToken = function (token) {
         'tokens.token': token,
         'tokens.access': 'auth'
     });
+};
+UserSchema.statics.verifyPassword = function (password, hash) {
+    return bcryptjs_1.default.compare(password, hash);
 };
 exports.User = mongoose_1.model('User', UserSchema);
 //# sourceMappingURL=User.js.map

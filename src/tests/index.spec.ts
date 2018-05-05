@@ -41,7 +41,7 @@ describe('POST /todos', () => {
   it('should not create with bad data', (done) => {
     request(app)
       .post('/todos')
-      .send({ })
+      .send({})
       .expect(400)
       .end((err, res) => {
         if (err) {
@@ -229,7 +229,8 @@ describe('POST /users', () => {
             expect(user).toBeTruthy();
             expect(user.password).not.toBe(password);
             done();
-          });
+          })
+          .catch((err) => done(err));
 
       });
   });
@@ -260,6 +261,66 @@ describe('POST /users', () => {
       .expect((res) => {
         expect(res.headers['x-auth']).not.toBeTruthy();
         expect(res.body).toEqual({});
+      })
+      .end(done);
+  });
+});
+
+describe('POST /users/login', () => {
+  it('should allow login with correct credentials', (done) => {
+    const email = testUsers[1].email;
+    const password = testUsers[1].password;
+    const id = testUsers[1]._id;
+
+    request(app)
+      .post('/users/login')
+      .send({ email, password })
+      .expect(200)
+      .expect((res) => {
+        expect(res.headers['x-auth']).toBeTruthy();
+      })
+      .end((err, res) => {
+        if (err) {
+          done(err);
+        }
+
+        User.findById(id)
+          .then((user) => {
+            expect(user).toBeTruthy();
+            expect(user.tokens[0]).toMatchObject({
+              access: 'auth',
+              token: res.headers['x-auth']
+            });
+            done();
+          })
+          .catch((err) => done(err));
+      });
+  });
+
+  it('should return 403 on wrong credentials', (done) => {
+    const email = testUsers[0].email;
+    const password = 'randomPassword';
+
+    request(app)
+      .post('/users/login')
+      .send({ email, password })
+      .expect(403)
+      .expect((res) => {
+        expect(res.headers['x-auth']).not.toBeTruthy();
+      })
+      .end(done);
+  });
+
+  it('should return 404 on non existing user', (done) => {
+    const email = 'notExistingEmail@example.com';
+    const password = 'randomPassword';
+
+    request(app)
+      .post('/users/login')
+      .send({ email, password })
+      .expect(404)
+      .expect((res) => {
+        expect(res.headers['x-auth']).not.toBeTruthy();
       })
       .end(done);
   });

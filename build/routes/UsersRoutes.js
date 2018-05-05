@@ -27,6 +27,28 @@ var UsersRoutes = /** @class */ (function () {
             .get(middleware_1.authenticate, function (req, res) {
             res.send(req.user);
         });
+        app.route('/users/login')
+            .post(function (req, res) {
+            var body = pick_1.default(req.body, ['email', 'password']);
+            models_1.User.findOne({ email: body.email })
+                .then(function (user) {
+                if (!user) {
+                    return res.status(404).send();
+                }
+                models_1.User.verifyPassword(body.password, user.password)
+                    .then(function (isVerified) {
+                    if (isVerified) {
+                        user.generateAuthToken()
+                            .then(function (token) {
+                            res.status(200).header('x-auth', token).send();
+                        });
+                    }
+                    else {
+                        res.status(403).send();
+                    }
+                });
+            });
+        });
     }
     return UsersRoutes;
 }());

@@ -29,6 +29,7 @@ export interface IUser extends IUserDocument {
 interface IUserModel extends Model<IUser> {
   // Static method typings
   findByToken: (this: IUserModel, token: string) => Promise<IUserDocument>;
+  verifyPassword: (this: IUserModel, password: string, hash: string) => Promise<boolean>;
 }
 
 const UserSchema: Schema = new Schema({
@@ -97,7 +98,10 @@ UserSchema.methods.generateAuthToken = function (this: IUser) {
   }, config.JWTsecret);
 
   const tokens = this.tokens || [];
-  this.tokens = [...tokens, { access, token }];
+  const index = tokens.findIndex((token) => token.access === access);
+  this.tokens = index === -1
+    ? [...tokens, { access, token }]
+    : tokens.splice(index, 1, { access, token });
 
   return this.save().then(() => {
     return token;
@@ -118,6 +122,10 @@ UserSchema.statics.findByToken = function (this: IUserModel, token: string) {
     'tokens.token': token,
     'tokens.access': 'auth'
   });
+};
+
+UserSchema.statics.verifyPassword = function (this: IUserModel, password: string, hash: string) {
+  return bcrypt.compare(password, hash);
 };
 
 export const User: IUserModel = model<IUser, IUserModel>('User', UserSchema);

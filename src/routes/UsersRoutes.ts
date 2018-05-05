@@ -28,5 +28,29 @@ export class UsersRoutes {
         res.send(req.user);
       });
 
+    app.route('/users/login')
+      .post((req, res) => {
+        const body = pick(req.body, ['email', 'password']);
+
+        User.findOne({ email: body.email })
+          .then((user) => {
+            if (!user) {
+              return res.status(404).send();
+            }
+
+            User.verifyPassword(body.password, user.password)
+              .then((isVerified) => {
+                if (isVerified) {
+                  user.generateAuthToken()
+                    .then((token) => {
+                      res.status(200).header('x-auth', token).send();
+                    });
+                } else {
+                  res.status(403).send();
+                }
+              });
+          });
+      });
+
   }
 }

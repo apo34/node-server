@@ -208,7 +208,8 @@ describe('POST /users', function () {
                 expect_1.default(user).toBeTruthy();
                 expect_1.default(user.password).not.toBe(password);
                 done();
-            });
+            })
+                .catch(function (err) { return done(err); });
         });
     });
     it('should return validation errors', function (done) {
@@ -234,6 +235,59 @@ describe('POST /users', function () {
             .expect(function (res) {
             expect_1.default(res.headers['x-auth']).not.toBeTruthy();
             expect_1.default(res.body).toEqual({});
+        })
+            .end(done);
+    });
+});
+describe('POST /users/login', function () {
+    it('should allow login with correct credentials', function (done) {
+        var email = seed_1.testUsers[1].email;
+        var password = seed_1.testUsers[1].password;
+        var id = seed_1.testUsers[1]._id;
+        supertest_1.default(index_1.app)
+            .post('/users/login')
+            .send({ email: email, password: password })
+            .expect(200)
+            .expect(function (res) {
+            expect_1.default(res.headers['x-auth']).toBeTruthy();
+        })
+            .end(function (err, res) {
+            if (err) {
+                done(err);
+            }
+            models_1.User.findById(id)
+                .then(function (user) {
+                expect_1.default(user).toBeTruthy();
+                expect_1.default(user.tokens[0]).toMatchObject({
+                    access: 'auth',
+                    token: res.headers['x-auth']
+                });
+                done();
+            })
+                .catch(function (err) { return done(err); });
+        });
+    });
+    it('should return 403 on wrong credentials', function (done) {
+        var email = seed_1.testUsers[0].email;
+        var password = 'randomPassword';
+        supertest_1.default(index_1.app)
+            .post('/users/login')
+            .send({ email: email, password: password })
+            .expect(403)
+            .expect(function (res) {
+            expect_1.default(res.headers['x-auth']).not.toBeTruthy();
+        })
+            .end(done);
+    });
+    it('should return 404 on non existing user', function (done) {
+        var email = 'notExistingEmail@example.com';
+        var password = 'randomPassword';
+        supertest_1.default(index_1.app)
+            .post('/users/login')
+            .send({ email: email, password: password })
+            .expect(404)
+            .expect(function (res) {
+            expect_1.default(res.headers['x-auth']).not.toBeTruthy();
         })
             .end(done);
     });
