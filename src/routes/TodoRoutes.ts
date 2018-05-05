@@ -1,5 +1,5 @@
-import * as express from 'express';
-import { pick } from 'lodash/pick';
+import express from 'express';
+import pick from 'lodash/pick';
 import { ObjectId } from 'mongodb';
 import { Todo } from './../models';
 

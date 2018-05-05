@@ -1,5 +1,5 @@
-import * as bcrypt from 'bcryptjs';
-import * as JWT from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import JWT from 'jsonwebtoken';
 import pick from 'lodash/pick';
 import { Document, Model, model, Promise, Schema } from 'mongoose';
 
@@ -21,7 +21,7 @@ export interface IUserDocument extends Document {
   tokens?: IToken[];
 }
 
-interface IUser extends IUserDocument {
+export interface IUser extends IUserDocument {
   // Custom methods typings
   generateAuthToken: (this: IUser) => Promise<string>;
 }
@@ -35,13 +35,13 @@ const UserSchema: Schema = new Schema({
   password: {
     type: String,
     required: true,
+    minlength: 5,
     trim: true
   },
   email: {
     type: String,
     required: true,
     unique: true,
-    minlength: 5,
     validate: {
       validator: (value: string) => {
         // tslint:disable-next-line:max-line-length

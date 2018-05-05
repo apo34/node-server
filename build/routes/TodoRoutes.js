@@ -1,6 +1,9 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+}
 Object.defineProperty(exports, "__esModule", { value: true });
-var pick_1 = require("lodash/pick");
+var pick_1 = __importDefault(require("lodash/pick"));
 var mongodb_1 = require("mongodb");
 var models_1 = require("./../models");
 var TodoRoutes = /** @class */ (function () {
@@ -66,7 +69,7 @@ var TodoRoutes = /** @class */ (function () {
                 });
             }
         }).patch(function (req, res) {
-            var body = pick_1.pick(req.body, ['text', 'completed']);
+            var body = pick_1.default(req.body, ['text', 'completed']);
             if (!_this._validateId(req, res)) {
                 return;
             }

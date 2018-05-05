@@ -1,4 +1,4 @@
-import * as express from 'express';
+import express from 'express';
 import { IUserDocument, User } from './../models';
 
 export interface IAthenticatedRequest extends express.Request {

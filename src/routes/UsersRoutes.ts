@@ -1,4 +1,4 @@
-import * as express from 'express';
+import express from 'express';
 import pick from 'lodash/pick';
 import { authenticate, IAthenticatedRequest } from './../middleware';
 import { User } from './../models';
@@ -19,7 +19,6 @@ export class UsersRoutes {
             res.header('x-auth', token).send(user)
           )
           .catch((err) => {
-            console.log('err?', err);
             res.status(400).send();
           });
       });

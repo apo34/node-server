@@ -1,6 +1,9 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+}
 Object.defineProperty(exports, "__esModule", { value: true });
-var pick_1 = require("lodash/pick");
+var pick_1 = __importDefault(require("lodash/pick"));
 var middleware_1 = require("./../middleware");
 var models_1 = require("./../models");
 var UsersRoutes = /** @class */ (function () {
@@ -17,7 +20,6 @@ var UsersRoutes = /** @class */ (function () {
                 return res.header('x-auth', token).send(user);
             })
                 .catch(function (err) {
-                console.log('err?', err);
                 res.status(400).send();
             });
         });

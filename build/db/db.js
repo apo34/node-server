@@ -1,11 +1,14 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+}
 Object.defineProperty(exports, "__esModule", { value: true });
-var mongoose = require("mongoose");
+var mongoose_1 = __importDefault(require("mongoose"));
 var Db = /** @class */ (function () {
     function Db() {
     }
     Db.connect = function () {
-        return mongoose.connect(this._determineDbAdress())
+        return mongoose_1.default.connect(this._determineDbAdress())
             .then(function () { return true; })
             .catch(function (reason) {
             console.log('Could not connect to db!');

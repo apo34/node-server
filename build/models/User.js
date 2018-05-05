@@ -1,21 +1,24 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+}
 Object.defineProperty(exports, "__esModule", { value: true });
-var bcrypt = require("bcryptjs");
-var JWT = require("jsonwebtoken");
-var pick_1 = require("lodash/pick");
+var bcryptjs_1 = __importDefault(require("bcryptjs"));
+var jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+var pick_1 = __importDefault(require("lodash/pick"));
 var mongoose_1 = require("mongoose");
 var config_1 = require("./../config");
 var UserSchema = new mongoose_1.Schema({
     password: {
         type: String,
         required: true,
+        minlength: 5,
         trim: true
     },
     email: {
         type: String,
         required: true,
         unique: true,
-        minlength: 5,
         validate: {
             validator: function (value) {
                 // tslint:disable-next-line:max-line-length
@@ -42,7 +45,7 @@ var UserSchema = new mongoose_1.Schema({
 UserSchema.pre('save', function (next) {
     var user = this;
     if (user.isModified('password')) {
-        bcrypt.hash(user.password, 10)
+        bcryptjs_1.default.hash(user.password, 10)
             .then(function (hash) {
             user.password = hash;
             next();
@@ -60,7 +63,7 @@ UserSchema.methods.toJSON = function () {
 // Custom methods declarations
 UserSchema.methods.generateAuthToken = function () {
     var access = 'auth';
-    var token = JWT.sign({
+    var token = jsonwebtoken_1.default.sign({
         _id: this._id.toHexString(),
         access: access
     }, config_1.config.JWTsecret);
@@ -73,7 +76,7 @@ UserSchema.methods.generateAuthToken = function () {
 UserSchema.statics.findByToken = function (token) {
     var decodedToken;
     try {
-        decodedToken = JWT.verify(token, config_1.config.JWTsecret);
+        decodedToken = jsonwebtoken_1.default.verify(token, config_1.config.JWTsecret);
     }
     catch (e) {
         return mongoose_1.Promise.reject();

@@ -5,7 +5,7 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "test": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha **/*.spec.js",
+    "test": "export NODE_ENV=test || SET \"NODE_ENV=test\" && mocha --inspect **/*.spec.js",
     "start": "node --inspect build/index.js",
     "compile:watch": "tsc --watch",
     "test:watch": "nodemon --exec \"npm test\""
